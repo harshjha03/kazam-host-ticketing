@@ -806,9 +806,56 @@ function ChargerDetailScreen({ onBack, onHelp }) {
   );
 }
 
+// ─── GUIDED TOUR ──────────────────────────────────────────────────
+// One coach bubble per screen telling the viewer what to tap next.
+// `pos` places the bubble inside the frame; the overlay is click-through
+// (pointerEvents:none) so the highlighted control underneath stays tappable.
+const GUIDE_TOTAL = 10;
+const GUIDE = {
+  map:           { n: 1,  title: 'Open your profile',   text: 'Tap your profile photo in the top-right corner.',                       pos: { top: 112, right: 14 }, arrow: 'up' },
+  profile:       { n: 2,  title: 'Go to My Chargers',   text: 'Tap the “My Chargers” tile to see your chargers.',                       pos: { bottom: 26, left: 16 } },
+  mychargers:    { n: 3,  title: 'Select your charger', text: 'Tap your charger card above to open it.',                                 pos: { bottom: 30, left: 16 } },
+  chargerdetail: { n: 4,  title: 'Get help',            text: 'Tap “Help & Support” below to report a problem.',                        pos: { top: 70, left: 16 } },
+  help:          { n: 5,  title: 'Report an issue',     text: 'Tap “Report an Issue” to begin — or open a past ticket.',                pos: { bottom: 26, left: 16 } },
+  cat:           { n: 6,  title: 'Pick the problem',    text: 'Choose the issue, then tap Continue. If a “Try First” card shows, tap “Still broken →”.', pos: { bottom: 104, left: 16 } },
+  details:       { n: 7,  title: 'Add details',         text: 'Record a voice note, add a photo, or tap Skip.',                         pos: { bottom: 140, left: 16 } },
+  review:        { n: 8,  title: 'Submit',              text: 'Check the summary, then tap “Submit Complaint”.',                        pos: { bottom: 104, left: 16 } },
+  success:       { n: 9,  title: 'Ticket raised',       text: 'Tap “View Ticket” to track it, or “Back to Home”.',                      pos: { bottom: 164, left: 16 } },
+  status:        { n: 10, title: 'Track & reply',       text: 'Follow the timeline and reply to the team. Tap ‹ to go back.',           pos: { top: 70, left: 16 } },
+};
+
+function CoachBubble({ screen, onHide }) {
+  const g = GUIDE[screen];
+  if (!g) return null;
+  return (
+    <div key={screen} style={{ position: 'absolute', maxWidth: 250, animation: 'kzFadeUp .3s ease both', ...g.pos }}>
+      <div style={{ position: 'relative', background: T.purple, color: '#fff', borderRadius: 14, padding: '12px 14px', boxShadow: '0 12px 30px rgba(0,0,0,0.55)' }}>
+        {g.arrow === 'up' && <div style={{ position: 'absolute', top: -7, right: 22, width: 0, height: 0, borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderBottom: `8px solid ${T.purple}` }} />}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 5 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', opacity: 0.85 }}>STEP {g.n} OF {GUIDE_TOTAL}</span>
+          <button onClick={onHide} style={{ pointerEvents: 'auto', background: 'rgba(255,255,255,0.22)', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, cursor: 'pointer', fontFamily: 'inherit' }}>Hide</button>
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2 }}>{g.title}</div>
+        <div style={{ fontSize: 13, lineHeight: 1.45, opacity: 0.95 }}>{g.text}</div>
+      </div>
+    </div>
+  );
+}
+
+function Guide({ screen, on, setOn }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 60 }}>
+      {on
+        ? <CoachBubble screen={screen} onHide={() => setOn(false)} />
+        : <button onClick={() => setOn(true)} className="kz-press" style={{ pointerEvents: 'auto', position: 'absolute', left: 14, bottom: 14, width: 34, height: 34, borderRadius: '50%', background: 'rgba(20,20,20,0.92)', border: `1px solid ${T.border}`, color: T.purple, fontSize: 17, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>?</button>}
+    </div>
+  );
+}
+
 // ─── APP ──────────────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen] = useState('map');
+  const [guideOn, setGuideOn] = useState(true);
   const [dir, setDir] = useState('fwd'); // drives slide direction
   const [catId, setCatId] = useState(null);
   const [proof, setProof] = useState(null);
@@ -864,6 +911,7 @@ export default function App() {
         display: 'flex', flexDirection: 'column',
         transform: `scale(${scale})`,
         transformOrigin: 'center center',
+        position: 'relative',
       }}>
         {/* key={screen} remounts on every navigation so the slide animation replays */}
         <div key={screen} style={{ height: '100%', animation: `${dir === 'back' ? 'kzSlideBack' : 'kzSlideIn'} .26s ease both` }}>
@@ -878,6 +926,7 @@ export default function App() {
           {screen === 'success' && <SuccessScreen onHome={() => go('map', true)} onView={() => { setViewTicket(newTicket); go('status'); }} />}
           {screen === 'status' && viewTicket && <TicketStatusScreen ticket={viewTicket} onBack={() => go('help', true)} />}
         </div>
+        <Guide screen={screen} on={guideOn} setOn={setGuideOn} />
       </div>
     </div>
   );

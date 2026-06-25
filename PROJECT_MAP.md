@@ -152,6 +152,7 @@ flowchart TD
 | `proof` | Proof label string (or `null`), shown in `review` |
 | `viewTicket` | Ticket object passed to `status` (a past ticket or `newTicket`) |
 | `scale` | Phone-frame scale to fit viewport (clamped 0.55–1, recalced on resize) |
+| `guideOn` | Whether the guided-tour coach bubble is shown (default `true`; toggled by Hide / the `?` button) |
 
 `newTicket` is built fresh from `catId` so "View Ticket" after submit shows a just-created in-progress ticket. `go(s, back)` sets direction + screen.
 
@@ -170,7 +171,16 @@ flowchart TD
 - **`ANIM`** keyframes: `kzSlideIn`/`kzSlideBack` (screen transitions), `kzFadeUp`, `kzPop`, `kzBlink`, `kzGlow`, `kzPulse`. Plus `.kz-press` (tap scale-down) and `.kz-scroll` (hidden scrollbars).
 - Page background behind the phone frame is beige `#EDE4D3` (set in `body` style + outer wrapper div in `App`).
 
-## 11. Gotchas / notes
+## 11. Guided tour
+
+A click-through coaching overlay drives a demo viewer through the flow. Defined just before `App`:
+- **`GUIDE`** — `screen → { n, title, text, pos, arrow? }`. One entry per screen (10 steps). `pos` places the bubble inside the frame; `arrow:'up'` adds a pointer (used on `map` → the profile avatar).
+- **`CoachBubble`** — the purple step bubble (STEP n OF 10 + title + text + Hide).
+- **`Guide`** — full-frame overlay (`pointerEvents:'none'`, so the highlighted control stays tappable). Shows the bubble when `on`, else a `?` re-show button (bottom-left).
+
+Rendered in `App` as a sibling of the keyed screen `<div>`, inside the frame (which now has `position:'relative'`). `Hide` sets `guideOn=false`; the `?` button restores it. To re-word a step, edit its `GUIDE` entry; bubbles are click-through so exact positioning isn't critical.
+
+## 12. Gotchas / notes
 
 - **Single source of truth is [src/App.jsx](src/App.jsx)** — adding a screen means: add a component, add a `screen === '…'` branch in `App`'s render, and wire `go(...)` callbacks.
 - The lead-in screens (map/profile/mychargers/chargerdetail) are mostly **non-functional except the path to Help** — only the profile avatar, the "My Chargers" tile/row, the charger card, and the Help & Support CTA navigate; other rows/FABs are inert by design.
